@@ -1,0 +1,1 @@
+ALTER TABLE order_details DROP COLUMN cart_id;

@@ -1,0 +1,1 @@
+ALTER TABLE order_details ADD COLUMN cart_id uuid REFERENCES user_cart_products(id);

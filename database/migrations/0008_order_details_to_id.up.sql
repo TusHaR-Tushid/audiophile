@@ -1,0 +1,1 @@
+ALTER TABLE bill_details RENAME COLUMN order_details To order_id;

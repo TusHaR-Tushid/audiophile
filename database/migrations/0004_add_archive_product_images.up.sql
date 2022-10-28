@@ -1,0 +1,1 @@
+ALTER TABLE images_per_product ADD COLUMN archived_at TIMESTAMP WITH TIME ZONE;

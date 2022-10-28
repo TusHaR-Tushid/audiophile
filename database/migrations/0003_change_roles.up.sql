@@ -1,0 +1,1 @@
+ALTER TABLE roles RENAME roles TO role;

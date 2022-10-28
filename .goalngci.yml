@@ -1,0 +1,88 @@
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - commentedOutCode
+  govet:
+    check-shadowing: false
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+  exhaustive:
+    # check switch statements in generated files also
+    check-generated: false
+    # presence of "default" case in switch statements satisfies exhaustiveness,
+    # even if all enum members are not listed
+    default-signifies-exhaustive: true
+  goimports:
+    # put imports beginning with prefix after 3rd-party packages;
+    # it's a comma-separated list of prefixes
+    local-prefixes:    github.com/RemoteState/RMS/*
+  gomnd:
+    settings:
+      mnd:
+        checks: case, return, assign
+  tagliatelle:
+    # check the struck tag name case
+    case:
+      # use the struct field name to check the name of the struct tag
+      use-field-name: false
+      rules:
+        # any struct tag type can be used.
+        # support string case: `camel`, `pascal`, `kebab`, `snake`, `goCamel`, `goPascal`, `goKebab`, `goSnake`, `upper`, `lower`
+        json: camel
+        db: snake
+  gocyclo:
+    min-complexity: 35
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - gomnd
+    - gocyclo
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nolintlint
+    - nakedret
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - varcheck
+    - whitespace
+    - tagliatelle
+run:
+  skip-dirs:
+    - pgdata/
+  issues-exit-code: 1
+  timeout: 5
