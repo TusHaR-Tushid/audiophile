@@ -5,14 +5,18 @@ import (
 	"Audiophile/database/helper"
 	"Audiophile/models"
 	"Audiophile/utilities"
+	"context"
 	"database/sql"
+	firebase "firebase.google.com/go"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/api/option"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +31,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	if decoderErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logrus.Printf("Decoder error:%v", decoderErr)
+		return
+	}
+
+	if userDetails.Email == "" {
+		OauthLogin(userDetails.OauthToken, w, r)
 		return
 	}
 
@@ -64,6 +73,86 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	claims := &models.Claims{
 		ID:   userCredentials.ID,
 		Role: userCredentials.Role,
+		StandardClaims: jwt.StandardClaims{
+
+			ExpiresAt: expiresAt.Unix(),
+			// Issuer:    userCredentials.Role,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(JwtKey)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logrus.Printf("TokenString: cannot create token string:%v", err)
+		return
+	}
+
+	err = helper.CreateSession(claims)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logrus.Printf("CreateSession: cannot create session:%v", err)
+		return
+	}
+
+	userOutboundData := make(map[string]interface{})
+
+	userOutboundData["token"] = tokenString
+
+	err = utilities.Encoder(w, userOutboundData)
+	if err != nil {
+		logrus.Printf("Login: Not able to login:%v", err)
+		return
+	}
+}
+
+func OauthLogin(oauthToken string, w http.ResponseWriter, r *http.Request) {
+	opt := option.WithCredentialsJSON([]byte(os.Getenv("firebase_key")))
+	app, err := firebase.NewApp(context.Background(), nil, opt)
+	if err != nil {
+		logrus.Printf("OAuth:cannot create firebase application object:%v", err)
+		return
+	}
+	client, err := app.Auth(context.Background())
+	if err != nil {
+		logrus.Printf("OauthLogin:cannot create client client:%v", err)
+	}
+
+	//header := r.Header.Get(echo.HeaderAuthorization)
+	idToken := strings.TrimSpace(strings.Replace(oauthToken, "Bearer", "", 1))
+	firebaseToken, err := client.VerifyIDToken(context.Background(), idToken)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logrus.Printf("OauthLogin:cannot verify token:%v", err)
+		return
+	}
+	userDetails, err := client.GetUser(context.Background(), firebaseToken.UID)
+	if err != nil {
+		logrus.Printf("OauthLogin: cannot get user details:%v", err)
+		return
+	}
+
+	err = helper.CheckEmail(userDetails.Email)
+	var userID uuid.UUID
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ID, createErr := helper.CreateNewUser(userDetails)
+			if createErr != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				logrus.Printf("OauthLogin: cannot create new user:%v", createErr)
+				return
+			}
+			userID = ID
+		} else {
+			logrus.Printf("OauthLogin: cannot check user google email:%v", err)
+			return
+		}
+	}
+
+	expiresAt := time.Now().Add(60 * time.Minute)
+
+	claims := &models.Claims{
+		ID:   userID,
+		Role: "user",
 		StandardClaims: jwt.StandardClaims{
 
 			ExpiresAt: expiresAt.Unix(),

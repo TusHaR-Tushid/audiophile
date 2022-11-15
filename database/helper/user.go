@@ -3,6 +3,7 @@ package helper
 import (
 	"Audiophile/database"
 	"Audiophile/models"
+	"firebase.google.com/go/auth"
 	"github.com/elgris/sqrl"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -28,6 +29,21 @@ func FetchPasswordAndIDANDRole(userMail, userRole string) (models.UserCredential
 		return userCredentials, err
 	}
 	return userCredentials, nil
+}
+
+func CheckEmail(email string) error {
+	SQL := `SELECT id
+            FROM   users
+            WHERE  email = $1`
+
+	var userID int
+
+	err := database.AudiophileDB.Get(&userID, SQL, email)
+	if err != nil {
+		logrus.Printf("CheckEmail: cannot get userID from email:%v", err)
+		return err
+	}
+	return nil
 }
 
 func CreateSession(claims *models.Claims) error {
@@ -67,6 +83,21 @@ func CheckSession(userID uuid.UUID) (uuid.UUID, error) {
 		return sessionID, err
 	}
 	return sessionID, nil
+}
+
+func CreateNewUser(userRecord *auth.UserRecord) (uuid.UUID, error) {
+	SQL := `INSERT INTO users(name, email, phone_no, password) 
+            VALUES ($1, $2, $3, $4)
+            RETURNING id`
+
+	var userID uuid.UUID
+
+	err := database.AudiophileDB.Get(&userID, SQL, userRecord.DisplayName, userRecord.Email, userRecord.PhoneNumber, "")
+	if err != nil {
+		logrus.Printf("CreateNewUser: cannot create new user:%v", err)
+		return userID, err
+	}
+	return userID, nil
 }
 
 func CreateUser(userDetails *models.Users, tx *sqlx.Tx) (uuid.UUID, error) {

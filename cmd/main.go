@@ -5,6 +5,7 @@ import (
 	"Audiophile/server"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"os"
 )
 
 func main() {
@@ -13,7 +14,7 @@ func main() {
 	//databaseName := os.Getenv("databaseName")
 	//user := os.Getenv("user")
 	//password := os.Getenv("password")
-	host := "localhost"
+	host := os.Getenv("host")
 	port := "5435"
 	databaseName := "audiophile"
 	user := "postgres"

@@ -25,9 +25,10 @@ type UserCredentials struct {
 }
 
 type UsersLoginDetails struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Role       string `json:"role"`
+	OauthToken string `json:"oauthToken"`
 }
 
 type Claims struct {

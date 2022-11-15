@@ -10,3 +10,14 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1234
       - POSTGRES_DB=audiophile
+      - POSTGRES_PORT=5432
+  server:
+      image: audio-3:latest
+      ports:
+        - '8080:8080'
+      links:
+        - db
+      environment:
+        - host=db
+      depends_on:
+        - db
